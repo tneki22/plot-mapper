@@ -9,18 +9,28 @@ from pathlib import Path
 from typing import Any
 
 import streamlit as st
+import streamlit.elements.image as st_image_module
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
 import streamlit_drawable_canvas
 
-# --- НАДЕЖНЫЙ ПАТЧ ДЛЯ STREAMLIT CLOUD ---
+# --- НАДЕЖНЫЙ ПАТЧ ДЛЯ STREAMLIT CLOUD (V2) ---
 def _base64_image_to_url(image: Any, width: int, clamp: bool, channels: str, output_format: str, image_id: str) -> str:
     buffered = BytesIO()
     image.save(buffered, format="PNG")
     img_str = base64.b64encode(buffered.getvalue()).decode()
     return f"data:image/png;base64,{img_str}"
 
+# Внедряем нашу функцию во все возможные места, 
+# где ее может искать старая версия streamlit_drawable_canvas
+st_image_module.image_to_url = _base64_image_to_url
 streamlit_drawable_canvas.image_to_url = _base64_image_to_url
+
+try:
+    import streamlit.elements.lib.image_utils as st_image_utils
+    st_image_utils.image_to_url = _base64_image_to_url
+except ImportError:
+    pass
 # -----------------------------------------
 
 TARGET_PLOTS = 182
