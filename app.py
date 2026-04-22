@@ -2,35 +2,26 @@ from __future__ import annotations
 
 import json
 import math
+import base64
+from io import BytesIO
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
-import streamlit.elements.image as st_image_module
 from PIL import Image
 from streamlit_drawable_canvas import st_canvas
+import streamlit_drawable_canvas
 
-try:
-    from streamlit.elements.lib.image_utils import image_to_url as _st_image_to_url
-    from streamlit.elements.lib.layout_utils import LayoutConfig
-except Exception:  # pragma: no cover
-    _st_image_to_url = None
-    LayoutConfig = None
+# --- НАДЕЖНЫЙ ПАТЧ ДЛЯ STREAMLIT CLOUD ---
+def _base64_image_to_url(image: Any, width: int, clamp: bool, channels: str, output_format: str, image_id: str) -> str:
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return f"data:image/png;base64,{img_str}"
 
-
-if not hasattr(st_image_module, "image_to_url") and _st_image_to_url and LayoutConfig:
-    def _compat_image_to_url(image: Any, width: int, clamp: bool, channels: str, output_format: str, image_id: str) -> str:
-        return _st_image_to_url(
-            image=image,
-            layout_config=LayoutConfig(width=width),
-            clamp=clamp,
-            channels=channels,
-            output_format=output_format,
-            image_id=image_id,
-        )
-
-    st_image_module.image_to_url = _compat_image_to_url
+streamlit_drawable_canvas.image_to_url = _base64_image_to_url
+# -----------------------------------------
 
 TARGET_PLOTS = 182
 APP_DIR = Path(__file__).resolve().parent
